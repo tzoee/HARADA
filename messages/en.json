@@ -1,0 +1,109 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "settings": "Settings",
+    "logout": "Log out",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "retry": "Retry",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "saved": "Saved!",
+    "saving": "Saving...",
+    "noResults": "No results found",
+    "searchPlaceholder": "Search nodes...",
+    "timezone": "Timezone",
+    "generateChildren": "Generate Children",
+    "expandNode": "Expand Node",
+    "pickDate": "Pick a date"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signInTitle": "Welcome back",
+    "signUpTitle": "Create your account",
+    "signInDescription": "Enter your credentials to access your planning workspace",
+    "signUpDescription": "Start organizing your goals with the Harada method"
+  },
+  "canvas": {
+    "newCanvas": "New Canvas",
+    "untitled": "Untitled Canvas",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "archived": "Archived",
+    "deleteConfirm": "Are you sure you want to delete this canvas? This action cannot be undone.",
+    "export": "Export Canvas"
+  },
+  "tree": {
+    "newMainGoal": "New Main Goal",
+    "mainGoal": "Main Goal",
+    "untitled": "Untitled Goal",
+    "level": "Level",
+    "progress": "Progress",
+    "generateAll": "Generate All Levels"
+  },
+  "node": {
+    "title": "Title",
+    "description": "Description",
+    "status": "Status",
+    "dueDate": "Due Date",
+    "reminder": "Reminder",
+    "reminderTime": "Reminder Time",
+    "children": "Sub-tasks",
+    "markDone": "Mark as Done",
+    "setBlocked": "Set as Blocked",
+    "duplicateSubtree": "Duplicate Subtree",
+    "blockedByLevel2": "Blocked by Level 2"
+  },
+  "status": {
+    "done": "Done",
+    "inProgress": "In Progress",
+    "blocked": "Blocked"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "reminders": "Reminders",
+    "reminderPreference": "Reminder Preference",
+    "off": "Off",
+    "dailySummary": "Daily Summary",
+    "dueOnly": "Due Items Only"
+  },
+  "errors": {
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Something went wrong. Please try again.",
+    "authError": "Authentication failed. Please sign in again.",
+    "notFound": "Resource not found.",
+    "validationError": "Please check your input.",
+    "unauthorized": "You don't have permission to perform this action."
+  },
+  "empty": {
+    "noCanvases": "No canvases yet",
+    "noCanvasesDescription": "Create your first canvas to start planning",
+    "noTrees": "No goals yet",
+    "noTreesDescription": "Create your first main goal to start building your plan",
+    "noReminders": "No reminders set",
+    "noRemindersDescription": "Set reminders on your tasks to stay on track"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "common": {
+    "loading": "Memuat...",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "create": "Buat",
+    "search": "Cari",
+    "settings": "Pengaturan",
+    "logout": "Keluar",
+    "back": "Kembali",
+    "next": "Lanjut",
+    "done": "Selesai",
+    "retry": "Coba Lagi",
+    "close": "Tutup",
+    "confirm": "Konfirmasi",
+    "yes": "Ya",
+    "no": "Tidak",
+    "saved": "Tersimpan!",
+    "saving": "Menyimpan...",
+    "noResults": "Tidak ada hasil",
+    "searchPlaceholder": "Cari node...",
+    "timezone": "Zona Waktu",
+    "generateChildren": "Generate Anak",
+    "expandNode": "Perluas Node",
+    "pickDate": "Pilih tanggal"
+  },
+  "auth": {
+    "signIn": "Masuk",
+    "signUp": "Daftar",
+    "email": "Email",
+    "password": "Kata Sandi",
+    "confirmPassword": "Konfirmasi Kata Sandi",
+    "forgotPassword": "Lupa kata sandi?",
+    "noAccount": "Belum punya akun?",
+    "hasAccount": "Sudah punya akun?",
+    "signInTitle": "Selamat datang kembali",
+    "signUpTitle": "Buat akun Anda",
+    "signInDescription": "Masukkan kredensial untuk mengakses ruang kerja perencanaan Anda",
+    "signUpDescription": "Mulai mengatur tujuan Anda dengan metode Harada"
+  },
+  "canvas": {
+    "newCanvas": "Canvas Baru",
+    "untitled": "Canvas Tanpa Judul",
+    "rename": "Ubah Nama",
+    "duplicate": "Duplikat",
+    "archive": "Arsipkan",
+    "unarchive": "Batalkan Arsip",
+    "delete": "Hapus",
+    "archived": "Diarsipkan",
+    "deleteConfirm": "Apakah Anda yakin ingin menghapus canvas ini? Tindakan ini tidak dapat dibatalkan.",
+    "export": "Ekspor Canvas"
+  },
+  "tree": {
+    "newMainGoal": "Tujuan Utama Baru",
+    "mainGoal": "Tujuan Utama",
+    "untitled": "Tujuan Tanpa Judul",
+    "level": "Level",
+    "progress": "Progres",
+    "generateAll": "Generate Semua Level"
+  },
+  "node": {
+    "title": "Judul",
+    "description": "Deskripsi",
+    "status": "Status",
+    "dueDate": "Tanggal Jatuh Tempo",
+    "reminder": "Pengingat",
+    "reminderTime": "Waktu Pengingat",
+    "children": "Sub-tugas",
+    "markDone": "Tandai Selesai",
+    "setBlocked": "Tandai Terblokir",
+    "duplicateSubtree": "Duplikat Subtree",
+    "blockedByLevel2": "Diblokir oleh Level 2"
+  },
+  "status": {
+    "done": "Selesai",
+    "inProgress": "Sedang Dikerjakan",
+    "blocked": "Terblokir"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "language": "Bahasa",
+    "theme": "Tema",
+    "darkMode": "Mode Gelap",
+    "lightMode": "Mode Terang",
+    "reminders": "Pengingat",
+    "reminderPreference": "Preferensi Pengingat",
+    "off": "Mati",
+    "dailySummary": "Ringkasan Harian",
+    "dueOnly": "Hanya Item Jatuh Tempo"
+  },
+  "errors": {
+    "networkError": "Kesalahan jaringan. Periksa koneksi Anda.",
+    "serverError": "Terjadi kesalahan. Silakan coba lagi.",
+    "authError": "Autentikasi gagal. Silakan masuk kembali.",
+    "notFound": "Sumber daya tidak ditemukan.",
+    "validationError": "Periksa input Anda.",
+    "unauthorized": "Anda tidak memiliki izin untuk melakukan tindakan ini."
+  },
+  "empty": {
+    "noCanvases": "Belum ada canvas",
+    "noCanvasesDescription": "Buat canvas pertama Anda untuk mulai merencanakan",
+    "noTrees": "Belum ada tujuan",
+    "noTreesDescription": "Buat tujuan utama pertama Anda untuk mulai membangun rencana",
+    "noReminders": "Belum ada pengingat",
+    "noRemindersDescription": "Atur pengingat pada tugas Anda untuk tetap pada jalur"
+  }
+}
