@@ -197,14 +197,14 @@ export async function getRootNodeWithProgress(
   const rootNode: Node = rootNodeData as Node;
 
   // Get all nodes to compute accurate progress
-  const { data: allNodes } = await supabase
+  const { data: allNodesData } = await supabase
     .from('nodes')
     .select('*')
     .eq('tree_id', treeId)
     .order('level')
     .order('index_in_parent');
 
-  if (!allNodes) {
+  if (!allNodesData) {
     return {
       ...rootNode,
       progress: computeProgress(rootNode, [], false),
@@ -214,12 +214,14 @@ export async function getRootNodeWithProgress(
     };
   }
 
+  const allNodes: Node[] = allNodesData as Node[];
+
   // Build tree structure and compute progress bottom-up
   const nodeMap = new Map<string, Node>();
   const childrenMap = new Map<string, Node[]>();
   const progressMap = new Map<string, number>();
 
-  allNodes.forEach((n: Node) => {
+  allNodes.forEach(n => {
     nodeMap.set(n.id, n);
     const parentId = n.parent_id || 'root';
     if (!childrenMap.has(parentId)) {
@@ -230,7 +232,7 @@ export async function getRootNodeWithProgress(
 
   // Process from deepest level to root
   for (let level = 7; level >= 1; level--) {
-    const levelNodes = allNodes.filter((n: Node) => n.level === level);
+    const levelNodes = allNodes.filter(n => n.level === level);
     
     for (const node of levelNodes) {
       const children = childrenMap.get(node.id) || [];
