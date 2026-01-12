@@ -298,7 +298,7 @@ export function TowerView({ treeId, canvasId, nodes, rootNode }: TowerViewProps)
       {/* Node Detail Panel */}
       <NodeDetailPanel
         node={selectedNode || null}
-        children={selectedNodeChildren}
+        childNodes={selectedNodeChildren}
         onNodeUpdate={handleNodeUpdate}
         onNavigateToChild={handleNavigateToChild}
       />

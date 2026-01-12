@@ -29,14 +29,14 @@ import { format } from 'date-fns';
 
 interface NodeDetailPanelProps {
   node: NodeWithProgress | null;
-  children?: NodeWithProgress[];
+  childNodes?: NodeWithProgress[];
   onNodeUpdate?: () => void;
   onNavigateToChild?: (nodeId: string) => void;
 }
 
 export function NodeDetailPanel({ 
   node, 
-  children = [],
+  childNodes = [],
   onNodeUpdate,
   onNavigateToChild,
 }: NodeDetailPanelProps) {
@@ -52,6 +52,14 @@ export function NodeDetailPanel({
   );
   const [reminderEnabled, setReminderEnabled] = useState(node?.reminder_enabled || false);
   const [reminderTime, setReminderTime] = useState(node?.reminder_time || '09:00');
+
+  // Handle Escape key to close panel
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      closeDetailPanel();
+      e.preventDefault();
+    }
+  }, [closeDetailPanel]);
 
   // Sync local state when node changes
   useEffect(() => {
@@ -97,15 +105,7 @@ export function NodeDetailPanel({
     });
   };
 
-  // Handle Escape key to close panel
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      closeDetailPanel();
-      e.preventDefault();
-    }
-  }, [closeDetailPanel]);
-
-  const progressPercent = Math.round(node.progress * 100);
+  const progressPercent = node ? Math.round(node.progress * 100) : 0;
 
   return (
     <div
@@ -288,7 +288,7 @@ export function NodeDetailPanel({
         {node.level < 7 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Children ({children.length}/8)</Label>
+              <Label>Children ({childNodes.length}/8)</Label>
               {!node.children_generated && (
                 <Button
                   variant="outline"
@@ -305,9 +305,9 @@ export function NodeDetailPanel({
               )}
             </div>
             
-            {children.length > 0 ? (
+            {childNodes.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
-                {children.map((child) => (
+                {childNodes.map((child) => (
                   <button
                     key={child.id}
                     onClick={() => onNavigateToChild?.(child.id)}

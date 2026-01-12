@@ -197,7 +197,7 @@ export function StackedPillarsView({ treeId, canvasId, nodes, rootNode }: Stacke
 
       <NodeDetailPanel
         node={selectedNode || null}
-        children={selectedNodeChildren}
+        childNodes={selectedNodeChildren}
         onNodeUpdate={handleNodeUpdate}
         onNavigateToChild={handleNavigateToChild}
       />
