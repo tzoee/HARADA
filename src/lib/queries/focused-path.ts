@@ -183,16 +183,18 @@ export async function getRootNodeWithProgress(
   treeId: string,
   supabase: SupabaseClient<Database>
 ): Promise<NodeWithProgress | null> {
-  const { data: rootNode, error } = await supabase
+  const { data: rootNodeData, error } = await supabase
     .from('nodes')
     .select('*')
     .eq('tree_id', treeId)
     .eq('level', 1)
     .single();
 
-  if (error || !rootNode) {
+  if (error || !rootNodeData) {
     return null;
   }
+
+  const rootNode: Node = rootNodeData as Node;
 
   // Get all nodes to compute accurate progress
   const { data: allNodes } = await supabase
