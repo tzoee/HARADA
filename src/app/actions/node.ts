@@ -238,7 +238,7 @@ export async function duplicateSubtree(
     const nodeMap = new Map<string, Node>();
     const childrenMap = new Map<string, Node[]>();
     
-    allNodes?.forEach(node => {
+    allNodes?.forEach((node: Node) => {
       nodeMap.set(node.id, node);
       const parentId = node.parent_id || 'root';
       if (!childrenMap.has(parentId)) {
@@ -296,7 +296,7 @@ export async function duplicateSubtree(
 
     // Return the root of the duplicated subtree
     const newRootId = idMapping.get(nodeId);
-    const newRoot = insertedNodes?.find(n => n.id === newRootId);
+    const newRoot = insertedNodes?.find((n: Node) => n.id === newRootId);
 
     if (!newRoot) {
       return { error: 'Failed to create duplicated subtree' };

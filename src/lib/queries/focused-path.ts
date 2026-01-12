@@ -38,12 +38,12 @@ export async function buildFocusedPathData(
   while (currentNode) {
     path.unshift(currentNode);
     if (currentNode.parent_id) {
-      const { data: parent } = await supabase
+      const { data: parentNode } = await supabase
         .from('nodes')
         .select('*')
         .eq('id', currentNode.parent_id)
         .single();
-      currentNode = parent;
+      currentNode = (parentNode as Node | null) ?? null;
     } else {
       currentNode = null;
     }
@@ -206,7 +206,7 @@ export async function getRootNodeWithProgress(
   const childrenMap = new Map<string, Node[]>();
   const progressMap = new Map<string, number>();
 
-  allNodes.forEach(n => {
+  allNodes.forEach((n: Node) => {
     nodeMap.set(n.id, n);
     const parentId = n.parent_id || 'root';
     if (!childrenMap.has(parentId)) {
@@ -217,7 +217,7 @@ export async function getRootNodeWithProgress(
 
   // Process from deepest level to root
   for (let level = 7; level >= 1; level--) {
-    const levelNodes = allNodes.filter(n => n.level === level);
+    const levelNodes = allNodes.filter((n: Node) => n.level === level);
     
     for (const node of levelNodes) {
       const children = childrenMap.get(node.id) || [];
