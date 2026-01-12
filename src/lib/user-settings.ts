@@ -1,8 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { UserSettings } from '@/types/database';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnySupabaseClient = SupabaseClient<any>;
+type AnySupabaseClient = SupabaseClient<Record<string, unknown>>;
 
 /**
  * Ensures user settings exist for the given user.

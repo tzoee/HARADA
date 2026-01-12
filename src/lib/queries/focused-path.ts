@@ -4,8 +4,7 @@ import type { NodeWithProgress, FocusedPathData } from '@/types/computed';
 import { computeProgress } from '@/lib/progress';
 import { isInheritedBlocked } from '@/lib/blocking';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnySupabaseClient = SupabaseClient<any>;
+type AnySupabaseClient = SupabaseClient<Record<string, unknown>>;
 
 // Helper function to fetch a node by ID
 async function fetchNodeById(

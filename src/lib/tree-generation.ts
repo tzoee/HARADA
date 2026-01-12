@@ -5,8 +5,7 @@ const CHILDREN_PER_NODE = 8;
 const MAX_LEVEL = 7;
 const DEFAULT_INITIAL_LEVEL = 3;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnySupabaseClient = SupabaseClient<any>;
+type AnySupabaseClient = SupabaseClient<Record<string, unknown>>;
 
 /**
  * Generates child nodes for a parent node.
