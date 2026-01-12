@@ -96,11 +96,11 @@ export async function updateCanvas(
   }
 }
 
-export async function archiveCanvas(canvasId: string): Promise<ActionResult> {
+export async function archiveCanvas(canvasId: string): Promise<ActionResult<Canvas>> {
   return updateCanvas(canvasId, { is_archived: true });
 }
 
-export async function unarchiveCanvas(canvasId: string): Promise<ActionResult> {
+export async function unarchiveCanvas(canvasId: string): Promise<ActionResult<Canvas>> {
   return updateCanvas(canvasId, { is_archived: false });
 }
 
