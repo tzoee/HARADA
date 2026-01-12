@@ -38,12 +38,13 @@ export async function buildFocusedPathData(
   while (currentNode) {
     path.unshift(currentNode);
     if (currentNode.parent_id) {
-      const { data: parentNode } = await supabase
+      const parentId = currentNode.parent_id;
+      const result = await supabase
         .from('nodes')
         .select('*')
-        .eq('id', currentNode.parent_id)
+        .eq('id', parentId)
         .single();
-      currentNode = (parentNode as Node | null) ?? null;
+      currentNode = result.data ? (result.data as Node) : null;
     } else {
       currentNode = null;
     }
