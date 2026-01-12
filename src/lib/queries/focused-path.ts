@@ -34,19 +34,21 @@ export async function buildFocusedPathData(
   supabase: SupabaseClient<Database>
 ): Promise<FocusedPathData> {
   // 1. Get the focused node
-  const { data: focusedNode, error: focusedError } = await supabase
+  const { data: focusedNodeData, error: focusedError } = await supabase
     .from('nodes')
     .select('*')
     .eq('id', focusedNodeId)
     .single();
 
-  if (focusedError || !focusedNode) {
+  if (focusedError || !focusedNodeData) {
     throw new Error('Focused node not found');
   }
 
+  const focusedNode: Node = focusedNodeData as Node;
+
   // 2. Build path from root to focused node
   const path: Node[] = [];
-  let nodeToProcess: Node | null = focusedNode as Node;
+  let nodeToProcess: Node | null = focusedNode;
 
   while (nodeToProcess !== null) {
     path.unshift(nodeToProcess);
