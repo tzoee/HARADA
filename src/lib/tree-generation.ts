@@ -1,38 +1,29 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, Node, PlanTree } from '@/types/database';
+import type { Node, PlanTree } from '@/types/database';
 
 const CHILDREN_PER_NODE = 8;
 const MAX_LEVEL = 7;
 const DEFAULT_INITIAL_LEVEL = 3;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any>;
+
 /**
  * Generates child nodes for a parent node.
  * Creates exactly 8 children with index_in_parent 0-7.
- * 
- * Property 5: Node Structure Invariants
- * - Every non-leaf node (Levels 1-6) has exactly 8 children
- * - No node has level > 7
- * - Level 7 nodes have no children
- * 
- * @param parentNode - The parent node to generate children for
- * @param userId - The user ID for ownership
- * @param supabase - Supabase client
- * @returns Array of created child nodes
  */
 export async function generateChildNodes(
   parentNode: Pick<Node, 'id' | 'tree_id' | 'level' | 'title'>,
   userId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<Node[]> {
-  // Don't generate children for Level 7 (leaf nodes)
   if (parentNode.level >= MAX_LEVEL) {
     return [];
   }
 
   const childLevel = parentNode.level + 1;
-  const children: Database['public']['Tables']['nodes']['Insert'][] = [];
+  const children = [];
 
-  // Generate exactly 8 children
   for (let i = 0; i < CHILDREN_PER_NODE; i++) {
     children.push({
       tree_id: parentNode.tree_id,
@@ -52,29 +43,21 @@ export async function generateChildNodes(
 
   const { data, error } = await supabase
     .from('nodes')
-    .insert(children)
+    .insert(children as never)
     .select();
 
   if (error) {
     throw new Error(`Failed to generate child nodes: ${error.message}`);
   }
 
-  return data;
+  return data as Node[];
 }
 
-/**
- * Recursively generates nodes up to a specified level.
- * 
- * @param parentNode - The parent node to start from
- * @param maxLevel - Maximum level to generate (inclusive)
- * @param userId - The user ID for ownership
- * @param supabase - Supabase client
- */
 async function generateLevelsRecursively(
   parentNode: Pick<Node, 'id' | 'tree_id' | 'level' | 'title'>,
   maxLevel: number,
   userId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<void> {
   if (parentNode.level >= maxLevel || parentNode.level >= MAX_LEVEL) {
     return;
@@ -82,42 +65,25 @@ async function generateLevelsRecursively(
 
   const children = await generateChildNodes(parentNode, userId, supabase);
 
-  // Recursively generate for each child
   for (const child of children) {
     await generateLevelsRecursively(child, maxLevel, userId, supabase);
   }
 }
 
-/**
- * Creates a new Plan Tree with initial node structure.
- * 
- * Property 6: Lazy Generation Correctness
- * - Root node (Level 1) exists immediately
- * - Nodes up to Level 3 are generated with exactly 8 children per node
- * - Total initial node count: 1 + 8 + 64 = 73 nodes
- * 
- * @param canvasId - The canvas to create the tree in
- * @param userId - The user ID for ownership
- * @param title - The main goal title
- * @param generateAllLevels - If true, generates all levels up to 7
- * @param supabase - Supabase client
- * @returns The created plan tree
- */
 export async function createPlanTree(
   canvasId: string,
   userId: string,
   title: string,
   generateAllLevels: boolean = false,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<PlanTree> {
-  // 1. Create the tree record
   const { data: tree, error: treeError } = await supabase
     .from('plan_trees')
     .insert({
       canvas_id: canvasId,
       user_id: userId,
       title,
-    })
+    } as never)
     .select()
     .single();
 
@@ -125,18 +91,17 @@ export async function createPlanTree(
     throw new Error(`Failed to create plan tree: ${treeError.message}`);
   }
 
-  // 2. Create root node (Level 1)
   const { data: rootNode, error: rootError } = await supabase
     .from('nodes')
     .insert({
-      tree_id: tree.id,
+      tree_id: (tree as PlanTree).id,
       user_id: userId,
       parent_id: null,
       level: 1,
       index_in_parent: 0,
       title: title,
       status: 'in_progress',
-    })
+    } as never)
     .select()
     .single();
 
@@ -144,28 +109,17 @@ export async function createPlanTree(
     throw new Error(`Failed to create root node: ${rootError.message}`);
   }
 
-  // 3. Generate initial levels (up to Level 3 or all if requested)
   const maxInitialLevel = generateAllLevels ? MAX_LEVEL : DEFAULT_INITIAL_LEVEL;
-  await generateLevelsRecursively(rootNode, maxInitialLevel, userId, supabase);
+  await generateLevelsRecursively(rootNode as Node, maxInitialLevel, userId, supabase);
 
-  return tree;
+  return tree as PlanTree;
 }
 
-/**
- * Expands a node by generating its children if they don't exist.
- * Used for lazy generation when user navigates to deeper levels.
- * 
- * @param nodeId - The node to expand
- * @param userId - The user ID for ownership verification
- * @param supabase - Supabase client
- * @returns Array of child nodes (existing or newly created)
- */
 export async function expandNode(
   nodeId: string,
   userId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<Node[]> {
-  // Get the node
   const { data: node, error: nodeError } = await supabase
     .from('nodes')
     .select('*')
@@ -177,7 +131,6 @@ export async function expandNode(
     throw new Error(`Failed to fetch node: ${nodeError.message}`);
   }
 
-  // Check if children already exist
   const { data: existingChildren, error: childrenError } = await supabase
     .from('nodes')
     .select('*')
@@ -188,25 +141,20 @@ export async function expandNode(
     throw new Error(`Failed to fetch children: ${childrenError.message}`);
   }
 
-  // If children exist, return them
   if (existingChildren && existingChildren.length > 0) {
-    return existingChildren;
+    return existingChildren as Node[];
   }
 
-  // Generate children if this is not a leaf node
-  if (node.level < MAX_LEVEL) {
-    return await generateChildNodes(node, userId, supabase);
+  if ((node as Node).level < MAX_LEVEL) {
+    return await generateChildNodes(node as Node, userId, supabase);
   }
 
   return [];
 }
 
-/**
- * Checks if a node has children generated.
- */
 export async function hasChildrenGenerated(
   nodeId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<boolean> {
   const { count, error } = await supabase
     .from('nodes')
@@ -220,12 +168,9 @@ export async function hasChildrenGenerated(
   return (count || 0) > 0;
 }
 
-/**
- * Gets the count of children for a node.
- */
 export async function getChildrenCount(
   nodeId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<number> {
   const { count, error } = await supabase
     .from('nodes')

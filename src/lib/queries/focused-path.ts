@@ -1,13 +1,16 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, Node } from '@/types/database';
+import type { Node } from '@/types/database';
 import type { NodeWithProgress, FocusedPathData } from '@/types/computed';
 import { computeProgress } from '@/lib/progress';
 import { isInheritedBlocked } from '@/lib/blocking';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any>;
+
 // Helper function to fetch a node by ID
 async function fetchNodeById(
   nodeId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<Node | null> {
   const { data } = await supabase
     .from('nodes')
@@ -31,7 +34,7 @@ async function fetchNodeById(
 export async function buildFocusedPathData(
   treeId: string,
   focusedNodeId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<FocusedPathData> {
   // 1. Get the focused node
   const { data: focusedNodeData, error: focusedError } = await supabase
@@ -181,7 +184,7 @@ export async function buildFocusedPathData(
  */
 export async function getRootNodeWithProgress(
   treeId: string,
-  supabase: SupabaseClient<Database>
+  supabase: AnySupabaseClient
 ): Promise<NodeWithProgress | null> {
   const { data: rootNodeData, error } = await supabase
     .from('nodes')

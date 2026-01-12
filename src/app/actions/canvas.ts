@@ -38,7 +38,7 @@ export async function createCanvas(
       .insert({
         user_id: userId,
         name: validationResult.data.name,
-      })
+      } as never)
       .select()
       .single();
 
@@ -47,7 +47,7 @@ export async function createCanvas(
     }
 
     revalidatePath('/app');
-    return { data };
+    return { data: data as Canvas };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Failed to create canvas' };
   }
@@ -66,7 +66,6 @@ export async function updateCanvas(
       return { error: validationResult.error.errors[0].message };
     }
 
-    // Verify ownership
     const { data: existing, error: fetchError } = await supabase
       .from('canvases')
       .select('id')
@@ -80,7 +79,7 @@ export async function updateCanvas(
 
     const { data, error } = await supabase
       .from('canvases')
-      .update(validationResult.data)
+      .update(validationResult.data as never)
       .eq('id', canvasId)
       .select()
       .single();
@@ -90,7 +89,7 @@ export async function updateCanvas(
     }
 
     revalidatePath('/app');
-    return { data };
+    return { data: data as Canvas };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Failed to update canvas' };
   }
@@ -109,7 +108,6 @@ export async function deleteCanvas(canvasId: string): Promise<ActionResult> {
     const userId = await getCurrentUserId();
     const supabase = await createClient();
 
-    // Verify ownership
     const { data: existing, error: fetchError } = await supabase
       .from('canvases')
       .select('id')
@@ -121,7 +119,6 @@ export async function deleteCanvas(canvasId: string): Promise<ActionResult> {
       return { error: 'Canvas not found' };
     }
 
-    // Delete canvas (cascades to trees and nodes via FK)
     const { error } = await supabase
       .from('canvases')
       .delete()
@@ -161,7 +158,7 @@ export async function getCanvases(
       return { error: error.message };
     }
 
-    return { data: data || [] };
+    return { data: (data || []) as Canvas[] };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Failed to fetch canvases' };
   }
@@ -183,19 +180,17 @@ export async function getCanvas(canvasId: string): Promise<ActionResult<Canvas>>
       return { error: error.message };
     }
 
-    return { data };
+    return { data: data as Canvas };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Failed to fetch canvas' };
   }
 }
-
 
 export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Canvas>> {
   try {
     const userId = await getCurrentUserId();
     const supabase = await createClient();
 
-    // Get original canvas
     const { data: originalCanvas, error: canvasError } = await supabase
       .from('canvases')
       .select('*')
@@ -207,14 +202,13 @@ export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Ca
       return { error: 'Canvas not found' };
     }
 
-    // Create new canvas
     const { data: newCanvas, error: newCanvasError } = await supabase
       .from('canvases')
       .insert({
         user_id: userId,
-        name: `${originalCanvas.name} (Copy)`,
+        name: `${(originalCanvas as Canvas).name} (Copy)`,
         is_archived: false,
-      })
+      } as never)
       .select()
       .single();
 
@@ -222,7 +216,6 @@ export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Ca
       return { error: 'Failed to create canvas copy' };
     }
 
-    // Get all trees in original canvas
     const { data: trees, error: treesError } = await supabase
       .from('plan_trees')
       .select('*')
@@ -233,24 +226,21 @@ export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Ca
       return { error: 'Failed to fetch trees' };
     }
 
-    // Duplicate each tree with its nodes
-    for (const tree of trees || []) {
-      // Create new tree
+    for (const tree of (trees || []) as Array<{ id: string; title: string }>) {
       const { data: newTree, error: newTreeError } = await supabase
         .from('plan_trees')
         .insert({
-          canvas_id: newCanvas.id,
+          canvas_id: (newCanvas as Canvas).id,
           user_id: userId,
           title: tree.title,
-        })
+        } as never)
         .select()
         .single();
 
       if (newTreeError || !newTree) {
-        continue; // Skip this tree on error
+        continue;
       }
 
-      // Get all nodes in original tree
       const { data: nodes, error: nodesError } = await supabase
         .from('nodes')
         .select('*')
@@ -263,17 +253,27 @@ export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Ca
         continue;
       }
 
-      // Map old node IDs to new node IDs
       const nodeIdMap = new Map<string, string>();
 
-      // Insert nodes level by level to maintain parent references
-      for (const node of nodes) {
+      for (const node of nodes as Array<{
+        id: string;
+        parent_id: string | null;
+        level: number;
+        index_in_parent: number;
+        title: string;
+        description: string | null;
+        status: string;
+        due_date: string | null;
+        reminder_enabled: boolean;
+        reminder_time: string | null;
+        reminder_timezone: string | null;
+      }>) {
         const newParentId = node.parent_id ? nodeIdMap.get(node.parent_id) : null;
 
         const { data: newNode, error: newNodeError } = await supabase
           .from('nodes')
           .insert({
-            tree_id: newTree.id,
+            tree_id: (newTree as { id: string }).id,
             user_id: userId,
             parent_id: newParentId,
             level: node.level,
@@ -285,18 +285,18 @@ export async function duplicateCanvas(canvasId: string): Promise<ActionResult<Ca
             reminder_enabled: node.reminder_enabled,
             reminder_time: node.reminder_time,
             reminder_timezone: node.reminder_timezone,
-          })
+          } as never)
           .select()
           .single();
 
         if (!newNodeError && newNode) {
-          nodeIdMap.set(node.id, newNode.id);
+          nodeIdMap.set(node.id, (newNode as { id: string }).id);
         }
       }
     }
 
     revalidatePath('/app');
-    return { data: newCanvas };
+    return { data: newCanvas as Canvas };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Failed to duplicate canvas' };
   }

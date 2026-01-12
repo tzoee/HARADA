@@ -1,15 +1,17 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, UserSettings } from '@/types/database';
+import type { UserSettings } from '@/types/database';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any>;
 
 /**
  * Ensures user settings exist for the given user.
  * Creates default settings if they don't exist.
  */
 export async function ensureUserSettings(
-  supabase: SupabaseClient<Database>,
+  supabase: AnySupabaseClient,
   userId: string
 ): Promise<UserSettings> {
-  // Try to get existing settings
   const { data: existingSettings, error: fetchError } = await supabase
     .from('user_settings')
     .select('*')
@@ -17,10 +19,9 @@ export async function ensureUserSettings(
     .single();
 
   if (existingSettings) {
-    return existingSettings;
+    return existingSettings as UserSettings;
   }
 
-  // If not found (PGRST116), create default settings
   if (fetchError?.code === 'PGRST116') {
     const defaultSettings = {
       user_id: userId,
@@ -32,7 +33,7 @@ export async function ensureUserSettings(
 
     const { data: newSettings, error: insertError } = await supabase
       .from('user_settings')
-      .insert(defaultSettings)
+      .insert(defaultSettings as never)
       .select()
       .single();
 
@@ -40,10 +41,9 @@ export async function ensureUserSettings(
       throw new Error(`Failed to create user settings: ${insertError.message}`);
     }
 
-    return newSettings;
+    return newSettings as UserSettings;
   }
 
-  // Other errors
   if (fetchError) {
     throw new Error(`Failed to fetch user settings: ${fetchError.message}`);
   }
@@ -55,7 +55,7 @@ export async function ensureUserSettings(
  * Gets user settings, returning null if not found.
  */
 export async function getUserSettings(
-  supabase: SupabaseClient<Database>,
+  supabase: AnySupabaseClient,
   userId: string
 ): Promise<UserSettings | null> {
   const { data, error } = await supabase
@@ -72,5 +72,5 @@ export async function getUserSettings(
     throw new Error(`Failed to fetch user settings: ${error.message}`);
   }
 
-  return data;
+  return data as UserSettings;
 }
