@@ -50,9 +50,9 @@ export async function generateChildNodes(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('nodes')
+    // @ts-expect-error - Supabase types don't match runtime behavior
     .insert(children)
     .select();
 
