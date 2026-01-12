@@ -4,6 +4,19 @@ import type { NodeWithProgress, FocusedPathData } from '@/types/computed';
 import { computeProgress } from '@/lib/progress';
 import { isInheritedBlocked } from '@/lib/blocking';
 
+// Helper function to fetch a node by ID
+async function fetchNodeById(
+  nodeId: string,
+  supabase: SupabaseClient<Database>
+): Promise<Node | null> {
+  const { data } = await supabase
+    .from('nodes')
+    .select('*')
+    .eq('id', nodeId)
+    .single();
+  return data as Node | null;
+}
+
 /**
  * Builds the focused path data for Tower View rendering.
  * Returns the path from root to focused node, plus siblings at each level.
@@ -33,20 +46,15 @@ export async function buildFocusedPathData(
 
   // 2. Build path from root to focused node
   const path: Node[] = [];
-  let currentNode: Node | null = focusedNode;
+  let nodeToProcess: Node | null = focusedNode as Node;
 
-  while (currentNode) {
-    path.unshift(currentNode);
-    if (currentNode.parent_id) {
-      const parentId = currentNode.parent_id;
-      const result = await supabase
-        .from('nodes')
-        .select('*')
-        .eq('id', parentId)
-        .single();
-      currentNode = result.data ? (result.data as Node) : null;
+  while (nodeToProcess !== null) {
+    path.unshift(nodeToProcess);
+    const nextParentId: string | null = nodeToProcess.parent_id;
+    if (nextParentId) {
+      nodeToProcess = await fetchNodeById(nextParentId, supabase);
     } else {
-      currentNode = null;
+      nodeToProcess = null;
     }
   }
 
