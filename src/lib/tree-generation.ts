@@ -52,7 +52,6 @@ export async function generateChildNodes(
 
   const { data, error } = await supabase
     .from('nodes')
-    // @ts-expect-error - Supabase types don't match runtime behavior
     .insert(children)
     .select();
 
