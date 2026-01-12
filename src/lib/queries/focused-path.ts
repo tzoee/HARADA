@@ -96,7 +96,7 @@ export async function buildFocusedPathData(
   nodesArray.forEach(n => nodeMap.set(n.id, n));
 
   // Build ancestor paths for each node
-  function getAncestors(node: Node): Node[] {
+  const getAncestors = (node: Node): Node[] => {
     const ancestors: Node[] = [];
     let current = node.parent_id ? nodeMap.get(node.parent_id) : null;
     
@@ -114,7 +114,7 @@ export async function buildFocusedPathData(
       current = current.parent_id ? nodeMap.get(current.parent_id) : null;
     }
     return ancestors;
-  }
+  };
 
   // Convert to NodeWithProgress
   const pathWithProgress: NodeWithProgress[] = path.map(node => {

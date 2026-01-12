@@ -249,14 +249,14 @@ export async function duplicateSubtree(
 
     // Collect all nodes in the subtree
     const subtreeNodes: Node[] = [];
-    function collectSubtree(nodeId: string) {
-      const node = nodeMap.get(nodeId);
+    const collectSubtree = (id: string) => {
+      const node = nodeMap.get(id);
       if (node) {
         subtreeNodes.push(node);
-        const children = childrenMap.get(nodeId) || [];
+        const children = childrenMap.get(id) || [];
         children.forEach(child => collectSubtree(child.id));
       }
-    }
+    };
     collectSubtree(nodeId);
 
     // Create ID mapping for new nodes

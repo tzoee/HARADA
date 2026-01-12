@@ -82,7 +82,7 @@ export function computeTreeProgress(
   }
 
   // Build ancestor path for each node
-  function getAncestors(node: Node): Node[] {
+  const getAncestors = (node: Node): Node[] => {
     const ancestors: Node[] = [];
     let current = node.parent_id ? nodeMap.get(node.parent_id) : null;
     while (current) {
@@ -90,7 +90,7 @@ export function computeTreeProgress(
       current = current.parent_id ? nodeMap.get(current.parent_id) : null;
     }
     return ancestors;
-  }
+  };
 
   // Process nodes from deepest level to root (Level 7 to Level 1)
   const nodesByLevel = new Map<number, Node[]>();
