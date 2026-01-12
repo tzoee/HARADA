@@ -4,6 +4,7 @@ import { getRootNode, getTreeNodes } from '@/app/actions/node';
 import { notFound } from 'next/navigation';
 import { ResponsiveTower } from '@/components/tower/responsive-tower';
 import { Breadcrumb } from '@/components/breadcrumb';
+import type { Node } from '@/types/database';
 
 interface TreePageProps {
   params: Promise<{ canvasId: string; treeId: string }>;
@@ -29,7 +30,7 @@ export default async function TreePage({ params }: TreePageProps) {
 
   const canvas = canvasResult.data;
   const tree = treeResult.data;
-  const rootNode = rootNodeResult.data;
+  const rootNode: Node | null = rootNodeResult.data || null;
   const nodes = nodesResult.data || [];
 
   return (
