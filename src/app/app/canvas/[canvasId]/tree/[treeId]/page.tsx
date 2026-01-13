@@ -2,7 +2,7 @@ import { getCanvas } from '@/app/actions/canvas';
 import { getTree } from '@/app/actions/tree';
 import { getRootNode, getTreeNodes } from '@/app/actions/node';
 import { notFound } from 'next/navigation';
-import { ResponsiveMandala } from '@/components/mandala';
+import { ResponsiveCanvas } from '@/components/canvas';
 import { Breadcrumb } from '@/components/breadcrumb';
 import type { Node } from '@/types/database';
 
@@ -43,9 +43,9 @@ export default async function TreePage({ params }: TreePageProps) {
         ]}
       />
 
-      {/* Mandala View */}
+      {/* Infinite Canvas View */}
       <div className="flex-1 relative overflow-hidden">
-        <ResponsiveMandala
+        <ResponsiveCanvas
           treeId={treeId}
           canvasId={canvasId}
           nodes={nodes}
