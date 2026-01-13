@@ -49,7 +49,7 @@ export function MandalaView({ rootNode, allNodes, onNodeUpdate }: MandalaViewPro
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNodeId(nodeId);
-    openDetailPanel();
+    openDetailPanel(nodeId);
   };
 
   const handleNodeExpand = (nodeId: string) => {
