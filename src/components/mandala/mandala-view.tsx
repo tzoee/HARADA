@@ -7,6 +7,7 @@ import { MandalaCenter } from './mandala-center';
 import { MandalaRing } from './mandala-ring';
 import { NodeDetailPanel } from '@/components/node-detail-panel';
 import { useUIStore } from '@/store/ui-store';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface MandalaViewProps {
   rootNode: NodeWithProgress;
@@ -17,6 +18,7 @@ interface MandalaViewProps {
 export function MandalaView({ rootNode, allNodes, onNodeUpdate }: MandalaViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
   const { openDetailPanel } = useUIStore();
 
   // Get children of a node
@@ -56,10 +58,48 @@ export function MandalaView({ rootNode, allNodes, onNodeUpdate }: MandalaViewPro
     setExpandedNodeId(expandedNodeId === nodeId ? null : nodeId);
   };
 
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.4));
+  const handleZoomReset = () => setZoom(1);
+
   return (
     <div className="relative w-full h-full min-h-[600px] flex items-center justify-center overflow-auto p-8">
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-30 flex flex-col gap-2">
+        <button
+          onClick={handleZoomIn}
+          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors"
+          title="Zoom In"
+        >
+          <ZoomIn className="h-5 w-5 text-slate-300" />
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors"
+          title="Zoom Out"
+        >
+          <ZoomOut className="h-5 w-5 text-slate-300" />
+        </button>
+        <button
+          onClick={handleZoomReset}
+          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors"
+          title="Reset Zoom"
+        >
+          <RotateCcw className="h-5 w-5 text-slate-300" />
+        </button>
+        <span className="text-xs text-slate-400 text-center">{Math.round(zoom * 100)}%</span>
+      </div>
+
       {/* Main Mandala Container */}
-      <div className="relative" style={{ width: '800px', height: '800px' }}>
+      <div 
+        className="relative transition-transform duration-200 ease-out" 
+        style={{ 
+          width: '800px', 
+          height: '800px',
+          transform: `scale(${zoom})`,
+          transformOrigin: 'center center'
+        }}
+      >
         {/* Center - Main Goal */}
         <MandalaCenter
           node={rootNode}
