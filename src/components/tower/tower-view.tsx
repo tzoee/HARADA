@@ -62,7 +62,7 @@ export function TowerView({ treeId, canvasId, nodes, rootNode }: TowerViewProps)
     const progressMap = new Map<string, number>();
     const inheritedBlockedMap = new Map<string, boolean>();
 
-    for (let level = 7; level >= 1; level--) {
+    for (let level = 4; level >= 1; level--) {
       const levelNodes = nodesByLevel.get(level) || [];
       
       for (const node of levelNodes) {
@@ -110,7 +110,7 @@ export function TowerView({ treeId, canvasId, nodes, rootNode }: TowerViewProps)
   // Get visible levels based on focus
   const visibleLevels = useMemo(() => {
     const levels: number[] = [];
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 4; i++) {
       if (nodesByLevel.has(i) && (nodesByLevel.get(i)?.length || 0) > 0) {
         levels.push(i);
       }

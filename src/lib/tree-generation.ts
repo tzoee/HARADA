@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import type { Node, PlanTree } from '@/types/database';
 
 const CHILDREN_PER_NODE = 8;
-const MAX_LEVEL = 7;
+const MAX_LEVEL = 4;
 const DEFAULT_INITIAL_LEVEL = 3;
 
 type AnySupabaseClient = SupabaseClient<Record<string, unknown>>;
