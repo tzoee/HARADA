@@ -7,6 +7,7 @@ import { CanvasConnectors } from './canvas-connectors';
 import { CanvasControls } from './canvas-controls';
 import { NodeDetailPanel } from '@/components/node-detail-panel';
 import { useUIStore } from '@/store/ui-store';
+import { cn } from '@/lib/utils';
 
 interface InfiniteCanvasProps {
   rootNode: NodeWithProgress;
@@ -16,7 +17,7 @@ interface InfiniteCanvasProps {
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.2;
-const ZOOM_SENSITIVITY = 0.001;
+const ZOOM_SENSITIVITY = 0.002;
 
 export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -25,6 +26,7 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [focusedSubGoalId, setFocusedSubGoalId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const { openDetailPanel } = useUIStore();
 
   // Get children of a node
@@ -51,7 +53,7 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     positions.set(rootNode.id, { x: 0, y: 0 });
     
     // Level 2 nodes in a circle around main goal
-    const l2Radius = 300;
+    const l2Radius = 320;
     level2Nodes.forEach((node, index) => {
       const angle = ((index / level2Nodes.length) * 360 - 90) * (Math.PI / 180);
       positions.set(node.id, {
@@ -64,7 +66,7 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     if (focusedSubGoalId) {
       const parentPos = positions.get(focusedSubGoalId);
       if (parentPos) {
-        const l3Radius = 150;
+        const l3Radius = 160;
         level3Nodes.forEach((node, index) => {
           const angle = ((index / level3Nodes.length) * 360 - 90) * (Math.PI / 180);
           positions.set(node.id, {
@@ -97,12 +99,19 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     }
   }, []);
 
+  // Smooth animate to position
+  const animateTo = useCallback((targetX: number, targetY: number, targetScale: number) => {
+    setIsAnimating(true);
+    setTransform({ x: targetX, y: targetY, scale: targetScale });
+    setTimeout(() => setIsAnimating(false), 400);
+  }, []);
+
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || isAnimating) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
-  }, [transform.x, transform.y]);
+  }, [transform.x, transform.y, isAnimating]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return;
@@ -117,9 +126,11 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     setIsDragging(false);
   }, []);
 
-  // Zoom handler
+  // Zoom handler - zoom to cursor position
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    if (isAnimating) return;
+    
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -135,15 +146,37 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
       x: mouseX - (mouseX - prev.x) * scaleFactor,
       y: mouseY - (mouseY - prev.y) * scaleFactor,
     }));
-  }, [transform.scale]);
+  }, [transform.scale, isAnimating]);
 
   // Node click handler
   const handleNodeClick = useCallback((nodeId: string) => {
+    const node = allNodes.find(n => n.id === nodeId);
+    if (!node) return;
+
     setSelectedNodeId(nodeId);
     openDetailPanel(nodeId);
-  }, [openDetailPanel]);
 
-  // Double-click to zoom and focus
+    // If clicking a Level 2 node, enter/exit drill mode
+    if (node.level === 2) {
+      const newFocusId = focusedSubGoalId === nodeId ? null : nodeId;
+      setFocusedSubGoalId(newFocusId);
+
+      // Animate to the sub-goal
+      if (newFocusId && canvasRef.current) {
+        const pos = nodePositions.get(nodeId);
+        if (pos) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          animateTo(
+            rect.width / 2 - pos.x * 1.3,
+            rect.height / 2 - pos.y * 1.3,
+            1.3
+          );
+        }
+      }
+    }
+  }, [allNodes, focusedSubGoalId, nodePositions, openDetailPanel, animateTo]);
+
+  // Double-click to zoom and center
   const handleNodeDoubleClick = useCallback((nodeId: string) => {
     const node = allNodes.find(n => n.id === nodeId);
     if (!node) return;
@@ -152,52 +185,86 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     if (!pos || !canvasRef.current) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const targetScale = node.level === 2 ? 1.5 : 1.2;
+    const targetScale = node.level === 1 ? 1 : node.level === 2 ? 1.5 : 1.8;
 
-    // If clicking a Level 2 node, enter drill mode
+    // If double-clicking a Level 2 node, enter drill mode
     if (node.level === 2) {
-      setFocusedSubGoalId(focusedSubGoalId === nodeId ? null : nodeId);
+      setFocusedSubGoalId(nodeId);
     }
 
     // Smooth zoom to node
-    setTransform({
-      scale: targetScale,
-      x: rect.width / 2 - pos.x * targetScale,
-      y: rect.height / 2 - pos.y * targetScale,
-    });
+    animateTo(
+      rect.width / 2 - pos.x * targetScale,
+      rect.height / 2 - pos.y * targetScale,
+      targetScale
+    );
 
     setSelectedNodeId(nodeId);
     openDetailPanel(nodeId);
-  }, [allNodes, nodePositions, focusedSubGoalId, openDetailPanel]);
+  }, [allNodes, nodePositions, openDetailPanel, animateTo]);
 
   // Control handlers
   const handleZoomIn = useCallback(() => {
-    setTransform(prev => ({
-      ...prev,
-      scale: Math.min(MAX_ZOOM, prev.scale * 1.2),
-    }));
-  }, []);
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const newScale = Math.min(MAX_ZOOM, transform.scale * 1.25);
+    const scaleFactor = newScale / transform.scale;
+    
+    animateTo(
+      centerX - (centerX - transform.x) * scaleFactor,
+      centerY - (centerY - transform.y) * scaleFactor,
+      newScale
+    );
+  }, [transform, animateTo]);
 
   const handleZoomOut = useCallback(() => {
-    setTransform(prev => ({
-      ...prev,
-      scale: Math.max(MIN_ZOOM, prev.scale / 1.2),
-    }));
-  }, []);
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const newScale = Math.max(MIN_ZOOM, transform.scale / 1.25);
+    const scaleFactor = newScale / transform.scale;
+    
+    animateTo(
+      centerX - (centerX - transform.x) * scaleFactor,
+      centerY - (centerY - transform.y) * scaleFactor,
+      newScale
+    );
+  }, [transform, animateTo]);
 
   const handleReset = useCallback(() => {
     if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
-    setTransform({ x: rect.width / 2, y: rect.height / 2, scale: 1 });
+    animateTo(rect.width / 2, rect.height / 2, 1);
     setFocusedSubGoalId(null);
-  }, []);
+  }, [animateTo]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-950">
+      {/* Grid background */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%),
+            linear-gradient(rgba(100, 116, 139, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 116, 139, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '100% 100%, 50px 50px, 50px 50px',
+        }}
+      />
+
       {/* Canvas */}
       <div
         ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
+        className={cn(
+          "w-full h-full",
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        )}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -205,7 +272,10 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
         onWheel={handleWheel}
       >
         <div
-          className="absolute transition-transform duration-100"
+          className={cn(
+            "absolute",
+            isAnimating && "transition-all duration-400 ease-out"
+          )}
           style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
@@ -265,6 +335,22 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
         onZoomOut={handleZoomOut}
         onReset={handleReset}
       />
+
+      {/* Focus mode indicator */}
+      {focusedSubGoalId && (
+        <div className="absolute top-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-slate-700 z-20">
+          <span className="text-xs text-slate-400">Focus Mode</span>
+          <p className="text-sm text-white font-medium">
+            {level2Nodes.find(n => n.id === focusedSubGoalId)?.title || 'Sub Goal'}
+          </p>
+          <button 
+            onClick={handleReset}
+            className="text-xs text-blue-400 hover:text-blue-300 mt-1"
+          >
+            ← Back to Overview
+          </button>
+        </div>
+      )}
 
       {/* Detail Panel */}
       <NodeDetailPanel
