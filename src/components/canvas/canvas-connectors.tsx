@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { NodeWithProgress } from '@/types/computed';
 
 interface CanvasConnectorsProps {
@@ -8,6 +9,7 @@ interface CanvasConnectorsProps {
   level3Nodes: NodeWithProgress[];
   nodePositions: Map<string, { x: number; y: number }>;
   focusedSubGoalId: string | null;
+  hoveredNodeId?: string | null;
 }
 
 export function CanvasConnectors({
@@ -16,8 +18,16 @@ export function CanvasConnectors({
   level3Nodes,
   nodePositions,
   focusedSubGoalId,
+  hoveredNodeId,
 }: CanvasConnectorsProps) {
   const rootPos = nodePositions.get(rootNode.id) || { x: 0, y: 0 };
+
+  // Status colors for connectors
+  const getConnectorColor = (node: NodeWithProgress) => {
+    if (node.status === 'blocked' || node.inherited_blocked) return '#64748b';
+    if (node.status === 'done') return '#22c55e';
+    return '#3b82f6';
+  };
 
   return (
     <svg
@@ -30,21 +40,31 @@ export function CanvasConnectors({
       }}
     >
       <defs>
-        {/* Gradient for active connectors */}
-        <linearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.3" />
-        </linearGradient>
-        {/* Gradient for blocked connectors */}
-        <linearGradient id="blockedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#64748b" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#64748b" stopOpacity="0.2" />
-        </linearGradient>
-        {/* Glow filter */}
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+        {/* Glow filters for each status */}
+        <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feFlood floodColor="#3b82f6" floodOpacity="0.6" />
+          <feComposite in2="blur" operator="in" />
           <feMerge>
-            <feMergeNode in="coloredBlur" />
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feFlood floodColor="#22c55e" floodOpacity="0.6" />
+          <feComposite in2="blur" operator="in" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feFlood floodColor="#ef4444" floodOpacity="0.6" />
+          <feComposite in2="blur" operator="in" />
+          <feMerge>
+            <feMergeNode />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
@@ -57,6 +77,13 @@ export function CanvasConnectors({
 
         const isFaded = focusedSubGoalId !== null && focusedSubGoalId !== node.id;
         const isBlocked = node.status === 'blocked' || node.inherited_blocked;
+        const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === rootNode.id;
+        const color = getConnectorColor(node);
+
+        // Determine glow filter
+        const glowFilter = isHighlighted 
+          ? (node.status === 'done' ? 'url(#glowGreen)' : node.status === 'blocked' ? 'url(#glowRed)' : 'url(#glowBlue)')
+          : undefined;
 
         return (
           <line
@@ -65,12 +92,14 @@ export function CanvasConnectors({
             y1={rootPos.y + 1000}
             x2={nodePos.x + 1000}
             y2={nodePos.y + 1000}
-            stroke={isBlocked ? 'url(#blockedGradient)' : 'url(#activeGradient)'}
-            strokeWidth={isFaded ? 1 : 2}
+            stroke={color}
+            strokeWidth={isHighlighted ? 3 : 2.5}
             strokeDasharray={isBlocked ? '8 4' : undefined}
-            opacity={isFaded ? 0.2 : 1}
-            filter={!isFaded && !isBlocked ? 'url(#glow)' : undefined}
-            className="transition-all duration-300"
+            opacity={isFaded ? 0.15 : (isHighlighted ? 0.9 : 0.5)}
+            filter={glowFilter}
+            style={{
+              transition: 'opacity 200ms ease-out, stroke-width 200ms ease-out',
+            }}
           />
         );
       })}
@@ -82,6 +111,12 @@ export function CanvasConnectors({
         if (!parentPos || !nodePos) return null;
 
         const isBlocked = node.status === 'blocked' || node.inherited_blocked;
+        const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === focusedSubGoalId;
+        const color = getConnectorColor(node);
+
+        const glowFilter = isHighlighted 
+          ? (node.status === 'done' ? 'url(#glowGreen)' : node.status === 'blocked' ? 'url(#glowRed)' : 'url(#glowBlue)')
+          : undefined;
 
         return (
           <line
@@ -90,11 +125,14 @@ export function CanvasConnectors({
             y1={parentPos.y + 1000}
             x2={nodePos.x + 1000}
             y2={nodePos.y + 1000}
-            stroke={isBlocked ? 'url(#blockedGradient)' : 'url(#activeGradient)'}
-            strokeWidth={1.5}
+            stroke={color}
+            strokeWidth={isHighlighted ? 2 : 1.5}
             strokeDasharray={isBlocked ? '6 3' : undefined}
-            filter={!isBlocked ? 'url(#glow)' : undefined}
-            className="transition-all duration-300"
+            opacity={isHighlighted ? 0.85 : 0.4}
+            filter={glowFilter}
+            style={{
+              transition: 'opacity 200ms ease-out, stroke-width 200ms ease-out',
+            }}
           />
         );
       })}

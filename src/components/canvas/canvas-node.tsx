@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import type { NodeWithProgress } from '@/types/computed';
-import { Check, Loader2, Ban } from 'lucide-react';
+import { Check, Loader2, Ban, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 interface CanvasNodeProps {
@@ -12,6 +12,7 @@ interface CanvasNodeProps {
   isFaded: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
+  onHover?: (nodeId: string | null) => void;
 }
 
 export function CanvasNode({
@@ -21,39 +22,66 @@ export function CanvasNode({
   isFaded,
   onClick,
   onDoubleClick,
+  onHover,
 }: CanvasNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const progressPercent = Math.round(node.progress * 100);
-  const isBlocked = node.status === 'blocked';
   const isInheritedBlocked = node.inherited_blocked;
 
-  // Size based on level - Main Goal largest, Activities smallest
-  const sizes = {
-    1: { width: 180, height: 180, fontSize: 'text-sm', ring: 10, glow: 'shadow-2xl' },
-    2: { width: 130, height: 130, fontSize: 'text-xs', ring: 7, glow: 'shadow-xl' },
-    3: { width: 95, height: 95, fontSize: 'text-[10px]', ring: 5, glow: 'shadow-lg' },
+  // Visual hierarchy: scale based on level
+  const levelConfig = {
+    1: { 
+      baseScale: 1, 
+      hoverScale: 1.03,
+      size: 180, 
+      ring: 10, 
+      opacity: 1,
+      glowIntensity: 'shadow-2xl',
+      fontSize: 'text-sm'
+    },
+    2: { 
+      baseScale: 0.85, 
+      hoverScale: 0.95,
+      size: 140, 
+      ring: 7, 
+      opacity: 0.92,
+      glowIntensity: 'shadow-xl',
+      fontSize: 'text-xs'
+    },
+    3: { 
+      baseScale: 0.75, 
+      hoverScale: 0.82,
+      size: 100, 
+      ring: 5, 
+      opacity: 0.85,
+      glowIntensity: 'shadow-lg',
+      fontSize: 'text-[10px]'
+    },
   };
-  const size = sizes[node.level as 1 | 2 | 3] || sizes[3];
+  const config = levelConfig[node.level as 1 | 2 | 3] || levelConfig[3];
 
-  // Status colors with glow effects
+  // Status colors with glow
   const statusColors = {
     done: { 
-      bg: 'from-green-600/30 to-green-800/30', 
-      border: 'border-green-500/70', 
-      glow: 'shadow-green-500/30',
-      ring: '#22c55e'
+      bg: 'from-green-600/25 to-green-900/35', 
+      border: 'border-green-500/60', 
+      glow: 'rgba(34, 197, 94, 0.4)',
+      ring: '#22c55e',
+      text: 'text-green-400'
     },
     in_progress: { 
-      bg: 'from-blue-600/30 to-blue-800/30', 
-      border: 'border-blue-500/70', 
-      glow: 'shadow-blue-500/30',
-      ring: '#3b82f6'
+      bg: 'from-blue-600/25 to-blue-900/35', 
+      border: 'border-blue-500/60', 
+      glow: 'rgba(59, 130, 246, 0.4)',
+      ring: '#3b82f6',
+      text: 'text-blue-400'
     },
     blocked: { 
-      bg: 'from-red-600/30 to-red-800/30', 
-      border: 'border-red-500/70', 
-      glow: 'shadow-red-500/30',
-      ring: '#ef4444'
+      bg: 'from-red-600/25 to-red-900/35', 
+      border: 'border-red-500/60', 
+      glow: 'rgba(239, 68, 68, 0.4)',
+      ring: '#ef4444',
+      text: 'text-red-400'
     },
   };
   const colors = statusColors[node.status];
@@ -65,71 +93,72 @@ export function CanvasNode({
   };
 
   // Progress ring calculations
-  const radius = size.width / 2 - size.ring;
+  const radius = config.size / 2 - config.ring;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - node.progress);
 
+  // Calculate final scale and opacity
+  const finalScale = isHovered && !isFaded ? config.hoverScale : config.baseScale;
+  const finalOpacity = isFaded ? 0.35 : (isHovered ? 1 : config.opacity);
+  const liftY = isHovered && !isFaded ? -3 : 0;
+
   return (
     <div
-      className={cn(
-        "absolute cursor-pointer",
-        "transition-all duration-300 ease-out",
-        isFaded && "opacity-20 pointer-events-auto",
-        isInheritedBlocked && !isFaded && "opacity-60 saturate-50"
-      )}
+      className="absolute cursor-pointer"
       style={{
         left: position.x,
         top: position.y,
-        width: size.width,
-        height: size.height,
-        transform: `translate(-50%, -50%) scale(${isHovered && !isFaded ? 1.08 : 1})`,
+        width: config.size,
+        height: config.size,
+        transform: `translate(-50%, -50%) scale(${finalScale}) translateY(${liftY}px)`,
+        opacity: isInheritedBlocked && !isFaded ? 0.5 : finalOpacity,
+        transition: 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease-out',
+        filter: isInheritedBlocked ? 'saturate(0.4)' : undefined,
       }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick(); }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => { setIsHovered(true); onHover?.(node.id); }}
+      onMouseLeave={() => { setIsHovered(false); onHover?.(null); }}
+      data-node-id={node.id}
     >
-      {/* Glow effect on hover */}
-      {isHovered && !isFaded && (
-        <div 
-          className={cn(
-            "absolute inset-0 rounded-full blur-xl opacity-50 transition-opacity duration-300",
-            node.status === 'done' && "bg-green-500/30",
-            node.status === 'in_progress' && "bg-blue-500/30",
-            node.status === 'blocked' && "bg-red-500/30"
-          )}
-        />
-      )}
+      {/* Glow layer */}
+      <div 
+        className="absolute inset-0 rounded-full blur-xl transition-opacity duration-200"
+        style={{
+          background: colors.glow,
+          opacity: isHovered && !isFaded ? 0.6 : (node.level === 1 ? 0.35 : 0.2),
+        }}
+      />
 
-      {/* Progress Ring */}
+      {/* Progress Ring SVG */}
       <svg
         className="absolute inset-0 -rotate-90"
-        width={size.width}
-        height={size.height}
+        width={config.size}
+        height={config.size}
       >
         {/* Background ring */}
         <circle
-          cx={size.width / 2}
-          cy={size.height / 2}
+          cx={config.size / 2}
+          cy={config.size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(100, 116, 139, 0.2)"
-          strokeWidth={size.ring}
+          stroke="rgba(100, 116, 139, 0.15)"
+          strokeWidth={config.ring}
         />
-        {/* Progress ring */}
+        {/* Progress ring with smooth transition */}
         <circle
-          cx={size.width / 2}
-          cy={size.height / 2}
+          cx={config.size / 2}
+          cy={config.size / 2}
           r={radius}
           fill="none"
           stroke={isInheritedBlocked ? '#64748b' : colors.ring}
-          strokeWidth={size.ring}
+          strokeWidth={config.ring}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          className="transition-all duration-700 ease-out"
           style={{
-            filter: isHovered && !isFaded ? `drop-shadow(0 0 8px ${colors.ring})` : undefined
+            transition: 'stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1)',
+            filter: isHovered && !isFaded ? `drop-shadow(0 0 6px ${colors.ring})` : undefined,
           }}
         />
       </svg>
@@ -139,61 +168,66 @@ export function CanvasNode({
         className={cn(
           "absolute rounded-full flex flex-col items-center justify-center",
           "bg-gradient-to-br backdrop-blur-md",
-          "border-2 transition-all duration-300",
+          "border-2 transition-all duration-200",
           colors.bg,
           colors.border,
-          size.glow,
-          colors.glow,
-          isSelected && "ring-2 ring-white/60 ring-offset-2 ring-offset-slate-950",
-          node.level === 1 && "border-3"
+          config.glowIntensity,
+          isSelected && "ring-2 ring-white/50 ring-offset-2 ring-offset-slate-950"
         )}
         style={{
-          left: size.ring,
-          top: size.ring,
-          right: size.ring,
-          bottom: size.ring,
+          left: config.ring,
+          top: config.ring,
+          right: config.ring,
+          bottom: config.ring,
+          boxShadow: isHovered && !isFaded 
+            ? `0 0 20px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.1)` 
+            : `inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
         {/* Status & Progress */}
         <div className={cn(
-          "flex items-center gap-1 mb-1",
-          node.status === 'done' && "text-green-400",
-          node.status === 'in_progress' && "text-blue-400",
-          node.status === 'blocked' && "text-red-400",
+          "flex items-center gap-1 mb-0.5",
+          colors.text,
           isInheritedBlocked && "text-slate-400"
         )}>
           {statusIcon[node.status]}
-          <span className={cn("font-bold", size.fontSize)}>{progressPercent}%</span>
+          <span className={cn("font-bold tabular-nums", config.fontSize)}>
+            {progressPercent}%
+          </span>
         </div>
 
         {/* Title */}
         <span className={cn(
           "text-white text-center leading-tight line-clamp-2 px-2",
-          size.fontSize,
+          config.fontSize,
           isInheritedBlocked && "text-slate-300"
         )}>
           {node.title}
         </span>
 
-        {/* Level badge for L1 */}
+        {/* Level 1 badge */}
         {node.level === 1 && (
-          <span className="absolute -bottom-2 text-[9px] text-blue-300 bg-blue-900/80 px-3 py-0.5 rounded-full border border-blue-500/30">
+          <span className="absolute -bottom-2 text-[9px] text-blue-300/90 bg-blue-950/80 px-3 py-0.5 rounded-full border border-blue-500/20">
             Main Goal
           </span>
         )}
 
-        {/* Level badge for L2 */}
-        {node.level === 2 && !isFaded && (
-          <span className="absolute -bottom-1 text-[8px] text-slate-400">
-            Sub Goal
-          </span>
+        {/* Level 2 affordance hint - shows on hover */}
+        {node.level === 2 && isHovered && !isFaded && (
+          <div className="absolute -bottom-1 flex items-center gap-0.5 text-[8px] text-slate-400 transition-opacity duration-150">
+            <ChevronDown className="h-2.5 w-2.5" />
+            <span>8 Activities</span>
+          </div>
         )}
       </div>
 
       {/* Inherited blocked tooltip */}
       {isInheritedBlocked && isHovered && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800/95 text-xs text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap z-50 border border-slate-700 shadow-lg">
-          <span className="text-red-400">⚠</span> Blocked by Sub Goal
+        <div 
+          className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 text-[11px] text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap z-50 border border-slate-700/50"
+          style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+        >
+          <span className="text-red-400 mr-1">⚠</span>Blocked by Sub Goal
         </div>
       )}
     </div>
