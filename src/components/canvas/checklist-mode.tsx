@@ -39,7 +39,7 @@ export function ChecklistMode({
     const subGoals = allNodes.filter(n => n.level === 2);
     const activities = allNodes.filter(n => n.level === 3);
     
-    const activitiesBySubGoal = new Map<string, NodeWithProgress[]>();
+    const activitiesBySubGoal: Map<string, NodeWithProgress[]> = new Map();
     activities.forEach(activity => {
       if (activity.parent_id) {
         const existing = activitiesBySubGoal.get(activity.parent_id) || [];
@@ -86,7 +86,7 @@ export function ChecklistMode({
 
   // Group filtered activities by sub goal
   const groupedActivities = useMemo(() => {
-    const grouped = new Map<string, NodeWithProgress[]>();
+    const grouped: Map<string, NodeWithProgress[]> = new Map();
     filteredActivities.forEach(activity => {
       if (activity.parent_id) {
         const existing = grouped.get(activity.parent_id) || [];
