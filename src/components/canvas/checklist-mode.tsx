@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { 
-  Search, Filter, Map, Calendar, Ban, Circle, 
+  Search, Filter, Map as MapIcon, Calendar, Ban, Circle, 
   Check, Loader2, ChevronRight, ChevronDown, CheckSquare
 } from 'lucide-react';
 import type { NodeWithProgress } from '@/types/computed';
@@ -18,7 +18,7 @@ type FilterType = 'all' | 'unfinished' | 'blocked' | 'due-today';
 
 interface ChecklistModeProps {
   allNodes: NodeWithProgress[];
-  checklistItemsByNode: Map<string, ChecklistItem[]>;
+  checklistItemsByNode: globalThis.Map<string, ChecklistItem[]>;
   onShowOnMap: (nodeId: string) => void;
   onNodeUpdate?: () => void;
 }
@@ -39,11 +39,11 @@ export function ChecklistMode({
     const subGoals = allNodes.filter(n => n.level === 2);
     const activities = allNodes.filter(n => n.level === 3);
     
-    const activitiesBySubGoal: Map<string, NodeWithProgress[]> = new Map();
+    const activitiesBySubGoal: Record<string, NodeWithProgress[]> = {};
     activities.forEach(activity => {
       if (activity.parent_id) {
-        const existing = activitiesBySubGoal.get(activity.parent_id) || [];
-        activitiesBySubGoal.set(activity.parent_id, [...existing, activity]);
+        const existing = activitiesBySubGoal[activity.parent_id] || [];
+        activitiesBySubGoal[activity.parent_id] = [...existing, activity];
       }
     });
 
@@ -86,11 +86,11 @@ export function ChecklistMode({
 
   // Group filtered activities by sub goal
   const groupedActivities = useMemo(() => {
-    const grouped: Map<string, NodeWithProgress[]> = new Map();
+    const grouped: Record<string, NodeWithProgress[]> = {};
     filteredActivities.forEach(activity => {
       if (activity.parent_id) {
-        const existing = grouped.get(activity.parent_id) || [];
-        grouped.set(activity.parent_id, [...existing, activity]);
+        const existing = grouped[activity.parent_id] || [];
+        grouped[activity.parent_id] = [...existing, activity];
       }
     });
     return grouped;
@@ -168,11 +168,11 @@ export function ChecklistMode({
         {/* Activities grouped by Sub Goal */}
         <div className="flex-1 overflow-y-auto">
           {subGoals.map(subGoal => {
-            const activities = groupedActivities.get(subGoal.id) || [];
+            const activities = groupedActivities[subGoal.id] || [];
             if (activities.length === 0 && activeFilter !== 'all') return null;
             
             const isExpanded = expandedSubGoals.has(subGoal.id);
-            const allActivities = activitiesBySubGoal.get(subGoal.id) || [];
+            const allActivities = activitiesBySubGoal[subGoal.id] || [];
 
             return (
               <div key={subGoal.id} className="border-b border-slate-800/50">
@@ -294,7 +294,7 @@ export function ChecklistMode({
                   onClick={() => onShowOnMap(selectedActivity.id)}
                   className="flex-shrink-0"
                 >
-                  <Map className="h-4 w-4 mr-1.5" />
+                  <MapIcon className="h-4 w-4 mr-1.5" />
                   Show on Map
                 </Button>
               </div>
