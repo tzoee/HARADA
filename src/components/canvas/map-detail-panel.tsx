@@ -198,7 +198,7 @@ export function MapDetailPanel({
           </div>
           {node.progress_from_checklist && (
             <p className="text-[10px] text-slate-500">
-              📋 From {node.checklist_count} checklist items
+              📋 From {node.checklist_count ?? 0} checklist items
             </p>
           )}
         </div>
@@ -299,7 +299,7 @@ export function MapDetailPanel({
               <CheckSquare className="h-4 w-4 mr-2" />
               Open in Checklist
             </Button>
-            {node.checklist_count > 0 && (
+            {(node.checklist_count ?? 0) > 0 && (
               <p className="text-[10px] text-slate-500 text-center mt-2">
                 {node.checklist_count} checklist items
               </p>
