@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import type { Node, ChecklistItem } from '@/types/database';
 import type { NodeWithProgress } from '@/types/computed';
 import { InfiniteCanvas } from './infinite-canvas';
+import { ChecklistMode } from './checklist-mode';
+import { ViewModeTabs, ViewMode } from './view-mode-tabs';
 import { computeProgress } from '@/lib/progress';
 import { isInheritedBlocked } from '@/lib/blocking';
 import { useRouter } from 'next/navigation';
@@ -24,6 +26,8 @@ export function ResponsiveCanvas({
   checklistItemsByNode = new Map(),
 }: ResponsiveCanvasProps) {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
 
   // Build node hierarchy and compute progress
   const { nodesWithProgress, rootNodeWithProgress } = useMemo(() => {
@@ -116,9 +120,20 @@ export function ResponsiveCanvas({
     return { nodesWithProgress, rootNodeWithProgress };
   }, [nodes, rootNode, checklistItemsByNode]);
 
-  const handleNodeUpdate = () => {
+  const handleNodeUpdate = useCallback(() => {
     router.refresh();
-  };
+  }, [router]);
+
+  // Handle switching to map mode and focusing on a specific node
+  const handleShowOnMap = useCallback((nodeId: string) => {
+    setFocusNodeId(nodeId);
+    setViewMode('map');
+  }, []);
+
+  // Handle switching to checklist mode for a specific node
+  const handleOpenChecklist = useCallback((nodeId: string) => {
+    setViewMode('checklist');
+  }, []);
 
   if (!rootNodeWithProgress) {
     return (
@@ -129,10 +144,32 @@ export function ResponsiveCanvas({
   }
 
   return (
-    <InfiniteCanvas
-      rootNode={rootNodeWithProgress}
-      allNodes={nodesWithProgress}
-      onNodeUpdate={handleNodeUpdate}
-    />
+    <div className="h-full flex flex-col">
+      {/* View Mode Tabs */}
+      <div className="flex items-center justify-center py-2 border-b border-slate-800/50 bg-slate-950/50">
+        <ViewModeTabs activeMode={viewMode} onModeChange={setViewMode} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 relative overflow-hidden">
+        {viewMode === 'map' ? (
+          <InfiniteCanvas
+            rootNode={rootNodeWithProgress}
+            allNodes={nodesWithProgress}
+            onNodeUpdate={handleNodeUpdate}
+            focusNodeId={focusNodeId}
+            onFocusHandled={() => setFocusNodeId(null)}
+            onOpenChecklist={handleOpenChecklist}
+          />
+        ) : (
+          <ChecklistMode
+            allNodes={nodesWithProgress}
+            checklistItemsByNode={checklistItemsByNode}
+            onShowOnMap={handleShowOnMap}
+            onNodeUpdate={handleNodeUpdate}
+          />
+        )}
+      </div>
+    </div>
   );
 }

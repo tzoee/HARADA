@@ -5,7 +5,7 @@ import type { NodeWithProgress } from '@/types/computed';
 import { CanvasNode } from './canvas-node';
 import { CanvasConnectors } from './canvas-connectors';
 import { CanvasControls } from './canvas-controls';
-import { NodeDetailPanel } from '@/components/node-detail-panel';
+import { MapDetailPanel } from './map-detail-panel';
 import { OnboardingTooltip } from '@/components/onboarding-tooltip';
 import { useUIStore } from '@/store/ui-store';
 import { useOnboardingStore } from '@/store/onboarding-store';
@@ -15,13 +15,16 @@ interface InfiniteCanvasProps {
   rootNode: NodeWithProgress;
   allNodes: NodeWithProgress[];
   onNodeUpdate?: () => void;
+  focusNodeId?: string | null;
+  onFocusHandled?: () => void;
+  onOpenChecklist?: (nodeId: string) => void;
 }
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.2;
 const ZOOM_SENSITIVITY = 0.002;
 
-export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCanvasProps) {
+export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate, focusNodeId, onFocusHandled, onOpenChecklist }: InfiniteCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
@@ -100,6 +103,32 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
     }, 500);
     return () => clearTimeout(timer);
   }, [startOnboarding]);
+
+  // Handle focus node from checklist mode
+  useEffect(() => {
+    if (focusNodeId && canvasRef.current) {
+      const node = allNodes.find(n => n.id === focusNodeId);
+      if (node) {
+        // If it's a Level 3 node, first focus on its parent (Level 2)
+        if (node.level === 3 && node.parent_id) {
+          setFocusedSubGoalId(node.parent_id);
+        }
+        
+        // Wait for positions to update, then animate to the node
+        setTimeout(() => {
+          const pos = nodePositions.get(focusNodeId);
+          if (pos && canvasRef.current) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            const targetScale = node.level === 1 ? 1 : node.level === 2 ? 1.5 : 1.8;
+            animateTo(rect.width / 2 - pos.x * targetScale, rect.height / 2 - pos.y * targetScale, targetScale);
+            setSelectedNodeId(focusNodeId);
+            openDetailPanel(focusNodeId);
+          }
+          onFocusHandled?.();
+        }, 100);
+      }
+    }
+  }, [focusNodeId, allNodes, nodePositions, animateTo, openDetailPanel, onFocusHandled]);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -264,12 +293,14 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
         </div>
       )}
 
-      <NodeDetailPanel node={selectedNode} childNodes={selectedNodeChildren} onNodeUpdate={onNodeUpdate}
+      <MapDetailPanel node={selectedNode} childNodes={selectedNodeChildren} onNodeUpdate={onNodeUpdate}
         onNavigateToChild={(childId) => {
           const child = allNodes.find(n => n.id === childId);
           if (child?.level === 3 && child.parent_id) setFocusedSubGoalId(child.parent_id);
           handleNodeDoubleClick(childId);
-        }} />
+        }}
+        onOpenChecklist={onOpenChecklist}
+      />
 
       {/* Onboarding tooltip */}
       <OnboardingTooltip

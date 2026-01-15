@@ -198,6 +198,137 @@ export async function markNodeInProgress(nodeId: string): Promise<ActionResult<N
   return updateNode(nodeId, { status: 'in_progress' });
 }
 
+/**
+ * Create a new child node under a parent
+ * Used for adding Activities (Level 3) under Sub Goals (Level 2)
+ */
+export async function createChildNode(
+  parentId: string,
+  title: string = 'New Activity'
+): Promise<ActionResult<Node>> {
+  try {
+    const userId = await getCurrentUserId();
+    const supabase = await createClient();
+
+    // Get parent node
+    const { data: parent, error: parentError } = await supabase
+      .from('nodes')
+      .select('*')
+      .eq('id', parentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (parentError || !parent) {
+      return { error: 'Parent node not found' };
+    }
+
+    // Only allow creating children for Level 1 and 2
+    if (parent.level >= 3) {
+      return { error: 'Cannot create children for Level 3 nodes' };
+    }
+
+    // Get current children count for index
+    const { data: siblings, error: siblingsError } = await supabase
+      .from('nodes')
+      .select('id')
+      .eq('parent_id', parentId)
+      .eq('user_id', userId);
+
+    if (siblingsError) {
+      return { error: siblingsError.message };
+    }
+
+    const newIndex = siblings?.length || 0;
+
+    // Create new node
+    const { data: newNode, error: createError } = await supabase
+      .from('nodes')
+      .insert({
+        tree_id: parent.tree_id,
+        user_id: userId,
+        parent_id: parentId,
+        level: parent.level + 1,
+        index_in_parent: newIndex,
+        title,
+        status: 'in_progress',
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      return { error: createError.message };
+    }
+
+    // Revalidate
+    const { data: tree } = await supabase
+      .from('plan_trees')
+      .select('canvas_id')
+      .eq('id', parent.tree_id)
+      .single();
+
+    if (tree) {
+      revalidatePath(`/app/canvas/${tree.canvas_id}/tree/${parent.tree_id}`);
+    }
+
+    return { data: newNode };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to create child node' };
+  }
+}
+
+/**
+ * Delete a node and all its descendants
+ */
+export async function deleteNode(nodeId: string): Promise<ActionResult<void>> {
+  try {
+    const userId = await getCurrentUserId();
+    const supabase = await createClient();
+
+    // Get the node to delete
+    const { data: node, error: nodeError } = await supabase
+      .from('nodes')
+      .select('*')
+      .eq('id', nodeId)
+      .eq('user_id', userId)
+      .single();
+
+    if (nodeError || !node) {
+      return { error: 'Node not found' };
+    }
+
+    // Don't allow deleting Level 1 (Main Goal) or Level 2 (Sub Goals)
+    if (node.level < 3) {
+      return { error: 'Cannot delete Main Goals or Sub Goals' };
+    }
+
+    // Delete the node (cascade will handle children and checklist items)
+    const { error: deleteError } = await supabase
+      .from('nodes')
+      .delete()
+      .eq('id', nodeId)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      return { error: deleteError.message };
+    }
+
+    // Revalidate
+    const { data: tree } = await supabase
+      .from('plan_trees')
+      .select('canvas_id')
+      .eq('id', node.tree_id)
+      .single();
+
+    if (tree) {
+      revalidatePath(`/app/canvas/${tree.canvas_id}/tree/${node.tree_id}`);
+    }
+
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to delete node' };
+  }
+}
+
 
 /**
  * Duplicate a node and all its descendants
