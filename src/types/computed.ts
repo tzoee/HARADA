@@ -14,6 +14,10 @@ export interface NodeWithProgress extends Node {
   children_count: number;
   /** Whether children have been generated for this node */
   children_generated: boolean;
+  /** Whether progress is calculated from checklist items (Level 3 only) */
+  progress_from_checklist?: boolean;
+  /** Number of checklist items (Level 3 only) */
+  checklist_count?: number;
 }
 
 /**

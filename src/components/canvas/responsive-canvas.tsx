@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { Node } from '@/types/database';
+import type { Node, ChecklistItem } from '@/types/database';
 import type { NodeWithProgress } from '@/types/computed';
 import { InfiniteCanvas } from './infinite-canvas';
 import { computeProgress } from '@/lib/progress';
@@ -13,9 +13,16 @@ interface ResponsiveCanvasProps {
   canvasId: string;
   nodes: Node[];
   rootNode: Node | null;
+  checklistItemsByNode?: Map<string, ChecklistItem[]>;
 }
 
-export function ResponsiveCanvas({ treeId, canvasId, nodes, rootNode }: ResponsiveCanvasProps) {
+export function ResponsiveCanvas({ 
+  treeId, 
+  canvasId, 
+  nodes, 
+  rootNode,
+  checklistItemsByNode = new Map(),
+}: ResponsiveCanvasProps) {
   const router = useRouter();
 
   // Build node hierarchy and compute progress
@@ -58,6 +65,8 @@ export function ResponsiveCanvas({ treeId, canvasId, nodes, rootNode }: Responsi
     // Compute progress for all nodes (bottom-up)
     const progressMap = new Map<string, number>();
     const inheritedBlockedMap = new Map<string, boolean>();
+    const progressFromChecklistMap = new Map<string, boolean>();
+    const checklistCountMap = new Map<string, number>();
 
     // Process from max level down to 1
     const maxLevel = Math.max(...Array.from(nodesByLevel.keys()), 1);
@@ -74,7 +83,18 @@ export function ResponsiveCanvas({ treeId, canvasId, nodes, rootNode }: Responsi
           progress: progressMap.get(c.id) || 0,
         }));
 
-        const progress = computeProgress(node, childrenWithProgress, inherited_blocked);
+        // Get checklist items for Level 3 nodes
+        const checklistItems = node.level === 3 
+          ? checklistItemsByNode.get(node.id) 
+          : undefined;
+
+        // Track if progress comes from checklist
+        if (node.level === 3 && checklistItems && checklistItems.length > 0) {
+          progressFromChecklistMap.set(node.id, true);
+          checklistCountMap.set(node.id, checklistItems.length);
+        }
+
+        const progress = computeProgress(node, childrenWithProgress, inherited_blocked, checklistItems);
         progressMap.set(node.id, progress);
       }
     }
@@ -86,13 +106,15 @@ export function ResponsiveCanvas({ treeId, canvasId, nodes, rootNode }: Responsi
       inherited_blocked: inheritedBlockedMap.get(node.id) || false,
       children_count: (childrenMap.get(node.id) || []).length,
       children_generated: (childrenMap.get(node.id) || []).length > 0,
+      progress_from_checklist: progressFromChecklistMap.get(node.id) || false,
+      checklist_count: checklistCountMap.get(node.id) || 0,
     }));
 
     // Get root node with progress
     const rootNodeWithProgress = nodesWithProgress.find(n => n.id === rootNode.id) || null;
 
     return { nodesWithProgress, rootNodeWithProgress };
-  }, [nodes, rootNode]);
+  }, [nodes, rootNode, checklistItemsByNode]);
 
   const handleNodeUpdate = () => {
     router.refresh();

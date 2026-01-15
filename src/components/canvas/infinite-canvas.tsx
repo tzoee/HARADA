@@ -6,7 +6,9 @@ import { CanvasNode } from './canvas-node';
 import { CanvasConnectors } from './canvas-connectors';
 import { CanvasControls } from './canvas-controls';
 import { NodeDetailPanel } from '@/components/node-detail-panel';
+import { OnboardingTooltip } from '@/components/onboarding-tooltip';
 import { useUIStore } from '@/store/ui-store';
+import { useOnboardingStore } from '@/store/onboarding-store';
 import { cn } from '@/lib/utils';
 
 interface InfiniteCanvasProps {
@@ -28,7 +30,8 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const { openDetailPanel } = useUIStore();
+  const { openDetailPanel, detailPanelOpen } = useUIStore();
+  const { startOnboarding } = useOnboardingStore();
 
   const getChildren = useCallback((parentId: string | null) => {
     return allNodes.filter(n => n.parent_id === parentId).sort((a, b) => a.index_in_parent - b.index_in_parent);
@@ -60,6 +63,43 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
 
   const selectedNode = useMemo(() => selectedNodeId ? allNodes.find(n => n.id === selectedNodeId) || null : null, [allNodes, selectedNodeId]);
   const selectedNodeChildren = useMemo(() => selectedNodeId ? getChildren(selectedNodeId) : [], [getChildren, selectedNodeId]);
+  
+  // Get focused sub goal node for warning banner
+  const focusedSubGoal = useMemo(() => focusedSubGoalId ? level2Nodes.find(n => n.id === focusedSubGoalId) || null : null, [focusedSubGoalId, level2Nodes]);
+
+  // Calculate screen positions for onboarding tooltips
+  const screenPositions = useMemo(() => {
+    if (!canvasRef.current) return { mainGoal: undefined, subGoal: undefined, activity: undefined };
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    
+    // Convert canvas position to screen position
+    const toScreen = (pos: { x: number; y: number }) => ({
+      x: rect.left + transform.x + pos.x * transform.scale,
+      y: rect.top + transform.y + pos.y * transform.scale,
+    });
+    
+    const mainGoalPos = nodePositions.get(rootNode.id);
+    const firstSubGoal = level2Nodes[0];
+    const subGoalPos = firstSubGoal ? nodePositions.get(firstSubGoal.id) : undefined;
+    const firstActivity = level3Nodes[0];
+    const activityPos = firstActivity ? nodePositions.get(firstActivity.id) : undefined;
+    
+    return {
+      mainGoal: mainGoalPos ? toScreen(mainGoalPos) : undefined,
+      subGoal: subGoalPos ? toScreen(subGoalPos) : undefined,
+      activity: activityPos ? toScreen(activityPos) : undefined,
+    };
+  }, [transform, nodePositions, rootNode.id, level2Nodes, level3Nodes]);
+
+  // Start onboarding on first canvas visit
+  useEffect(() => {
+    // Small delay to ensure canvas is rendered
+    const timer = setTimeout(() => {
+      startOnboarding();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [startOnboarding]);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -208,7 +248,16 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
       {focusedSubGoalId && (
         <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md rounded-xl px-4 py-3 border border-slate-700/50 z-20 shadow-xl">
           <span className="text-[10px] uppercase tracking-wider text-slate-500">Focus Mode</span>
-          <p className="text-sm text-white font-medium mt-0.5">{level2Nodes.find(n => n.id === focusedSubGoalId)?.title || 'Sub Goal'}</p>
+          <p className="text-sm text-white font-medium mt-0.5">{focusedSubGoal?.title || 'Sub Goal'}</p>
+          
+          {/* Warning banner for blocked sub goal */}
+          {focusedSubGoal?.status === 'blocked' && (
+            <div className="mt-2 flex items-center gap-1.5 text-[11px] text-red-400 bg-red-950/40 px-2 py-1.5 rounded-md border border-red-900/30">
+              <span>🔒</span>
+              <span>This goal is blocked. Activities cannot progress.</span>
+            </div>
+          )}
+          
           <button onClick={handleReset} className="text-xs text-blue-400 hover:text-blue-300 mt-2 flex items-center gap-1 transition-colors duration-150">
             <span>←</span> Back to Overview
           </button>
@@ -221,6 +270,15 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate }: InfiniteCan
           if (child?.level === 3 && child.parent_id) setFocusedSubGoalId(child.parent_id);
           handleNodeDoubleClick(childId);
         }} />
+
+      {/* Onboarding tooltip */}
+      <OnboardingTooltip
+        mainGoalPosition={screenPositions.mainGoal}
+        subGoalPosition={screenPositions.subGoal}
+        activityPosition={screenPositions.activity}
+        focusModeActive={focusedSubGoalId !== null}
+        detailPanelOpen={detailPanelOpen}
+      />
     </div>
   );
 }

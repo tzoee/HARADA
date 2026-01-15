@@ -1,6 +1,7 @@
 // Database types matching Supabase schema
 
 export type NodeStatus = 'done' | 'in_progress' | 'blocked';
+export type ChecklistStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
 export type ReminderPreference = 'off' | 'daily_summary' | 'due_only';
 export type Language = 'en' | 'id';
 export type Theme = 'dark' | 'light';
@@ -52,6 +53,19 @@ export interface Node {
   updated_at: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  node_id: string;
+  user_id: string;
+  title: string;
+  status: ChecklistStatus;
+  notes: string | null;
+  due_date: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Supabase Database type for type-safe queries
 export interface Database {
   public: {
@@ -92,9 +106,19 @@ export interface Database {
         };
         Update: Partial<Omit<Node, 'id' | 'user_id' | 'tree_id' | 'created_at' | 'updated_at'>>;
       };
+      checklist_items: {
+        Row: ChecklistItem;
+        Insert: Omit<ChecklistItem, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<ChecklistItem, 'id' | 'user_id' | 'node_id' | 'created_at' | 'updated_at'>>;
+      };
     };
     Enums: {
       node_status: NodeStatus;
+      checklist_status: ChecklistStatus;
       reminder_preference: ReminderPreference;
     };
   };

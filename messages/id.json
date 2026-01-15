@@ -24,7 +24,8 @@
     "timezone": "Zona Waktu",
     "generateChildren": "Generate Anak",
     "expandNode": "Perluas Node",
-    "pickDate": "Pilih tanggal"
+    "pickDate": "Pilih tanggal",
+    "skip": "Lewati"
   },
   "auth": {
     "signIn": "Masuk",
@@ -105,5 +106,14 @@
     "noTreesDescription": "Buat tujuan utama pertama Anda untuk mulai membangun rencana",
     "noReminders": "Belum ada pengingat",
     "noRemindersDescription": "Atur pengingat pada tugas Anda untuk tetap pada jalur"
+  },
+  "onboarding": {
+    "step1": "Ini adalah Tujuan Utama Anda. Semuanya dimulai dari sini.",
+    "step2": "Setiap Tujuan Utama didukung oleh 8 Sub Tujuan.",
+    "step3": "Klik Sub Tujuan untuk fokus dan melihat aktivitasnya.",
+    "step4": "Pecah pekerjaan menjadi aktivitas yang dapat ditindaklanjuti.",
+    "step5": "Gunakan checklist untuk langkah-langkah terkecil.",
+    "stepOf": "Langkah {current} dari {total}",
+    "gotIt": "Mengerti!"
   }
 }

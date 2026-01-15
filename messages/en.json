@@ -24,7 +24,8 @@
     "timezone": "Timezone",
     "generateChildren": "Generate Children",
     "expandNode": "Expand Node",
-    "pickDate": "Pick a date"
+    "pickDate": "Pick a date",
+    "skip": "Skip"
   },
   "auth": {
     "signIn": "Sign In",
@@ -105,5 +106,14 @@
     "noTreesDescription": "Create your first main goal to start building your plan",
     "noReminders": "No reminders set",
     "noRemindersDescription": "Set reminders on your tasks to stay on track"
+  },
+  "onboarding": {
+    "step1": "This is your Main Goal. Everything starts here.",
+    "step2": "Each Main Goal is supported by 8 Sub Goals.",
+    "step3": "Click a Sub Goal to focus on it and see its activities.",
+    "step4": "Break work into actionable activities.",
+    "step5": "Use checklists for the smallest steps.",
+    "stepOf": "Step {current} of {total}",
+    "gotIt": "Got it!"
   }
 }

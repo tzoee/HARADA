@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { NodeWithProgress } from '@/types/computed';
 
 interface CanvasConnectorsProps {
@@ -80,9 +79,9 @@ export function CanvasConnectors({
         const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === rootNode.id;
         const color = getConnectorColor(node);
 
-        // Determine glow filter
-        const glowFilter = isHighlighted 
-          ? (node.status === 'done' ? 'url(#glowGreen)' : node.status === 'blocked' ? 'url(#glowRed)' : 'url(#glowBlue)')
+        // Determine glow filter - no glow for blocked connectors
+        const glowFilter = isHighlighted && !isBlocked
+          ? (node.status === 'done' ? 'url(#glowGreen)' : 'url(#glowBlue)')
           : undefined;
 
         return (
@@ -114,8 +113,9 @@ export function CanvasConnectors({
         const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === focusedSubGoalId;
         const color = getConnectorColor(node);
 
-        const glowFilter = isHighlighted 
-          ? (node.status === 'done' ? 'url(#glowGreen)' : node.status === 'blocked' ? 'url(#glowRed)' : 'url(#glowBlue)')
+        // No glow for blocked connectors
+        const glowFilter = isHighlighted && !isBlocked
+          ? (node.status === 'done' ? 'url(#glowGreen)' : 'url(#glowBlue)')
           : undefined;
 
         return (

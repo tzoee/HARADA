@@ -24,6 +24,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Checklist } from '@/components/checklist';
 import { updateNode, expandNode, duplicateSubtree } from '@/app/actions/node';
 import { format } from 'date-fns';
 
@@ -343,6 +344,16 @@ export function NodeDetailPanel({
                 No children generated yet
               </p>
             )}
+          </div>
+        )}
+
+        {/* Checklist - Only for Level 3 nodes */}
+        {node.level === 3 && (
+          <div className="pt-4 border-t border-slate-700/50">
+            <Checklist 
+              nodeId={node.id} 
+              isReadOnly={node.inherited_blocked}
+            />
           </div>
         )}
 
