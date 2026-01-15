@@ -95,6 +95,12 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate, focusNodeId, 
     };
   }, [transform, nodePositions, rootNode.id, level2Nodes, level3Nodes]);
 
+  const animateTo = useCallback((targetX: number, targetY: number, targetScale: number) => {
+    setIsAnimating(true);
+    setTransform({ x: targetX, y: targetY, scale: targetScale });
+    setTimeout(() => setIsAnimating(false), 350);
+  }, []);
+
   // Start onboarding on first canvas visit
   useEffect(() => {
     // Small delay to ensure canvas is rendered
@@ -135,12 +141,6 @@ export function InfiniteCanvas({ rootNode, allNodes, onNodeUpdate, focusNodeId, 
       const rect = canvasRef.current.getBoundingClientRect();
       setTransform({ x: rect.width / 2, y: rect.height / 2, scale: 1 });
     }
-  }, []);
-
-  const animateTo = useCallback((targetX: number, targetY: number, targetScale: number) => {
-    setIsAnimating(true);
-    setTransform({ x: targetX, y: targetY, scale: targetScale });
-    setTimeout(() => setIsAnimating(false), 350);
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
